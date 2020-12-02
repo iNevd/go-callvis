@@ -87,6 +87,7 @@ type renderOpts struct {
 	nointer  bool
 	refresh  bool
 	nostd    bool
+	maxDepth int
 }
 
 func (a *analysis) render(opts *renderOpts) ([]byte, error) {
@@ -127,7 +128,7 @@ func (a *analysis) render(opts *renderOpts) ([]byte, error) {
 	}
 
 	dot, err := printOutput(a.prog, a.mains[0].Pkg, a.result.CallGraph,
-		focusPkg, opts.limit, opts.ignore, opts.include, opts.group, opts.nostd, opts.nointer)
+		focusPkg, opts.limit, opts.ignore, opts.include, opts.group, opts.nostd, opts.nointer, opts.maxDepth)
 	if err != nil {
 		return nil, fmt.Errorf("processing failed: %v", err)
 	}

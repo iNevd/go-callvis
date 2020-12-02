@@ -22,7 +22,7 @@ func inStd(node *callgraph.Node) bool {
 }
 
 func printOutput(prog *ssa.Program, mainPkg *types.Package, cg *callgraph.Graph, focusPkg *types.Package,
-	limitPaths, ignorePaths, includePaths []string, groupBy []string, nostd, nointer bool) ([]byte, error) {
+	limitPaths, ignorePaths, includePaths []string, groupBy []string, nostd, nointer bool, maxDepth int) ([]byte, error) {
 	var groupType, groupPkg bool
 	for _, g := range groupBy {
 		if g == "pkg" {
@@ -129,7 +129,19 @@ func printOutput(prog *ssa.Program, mainPkg *types.Package, cg *callgraph.Graph,
 	}
 
 	count := 0
-	err := callgraph.GraphVisitEdges(cg, func(edge *callgraph.Edge) error {
+
+	var newRoot *callgraph.Node
+	for _, r := range cg.Nodes {
+		if r.Func.Name() == "main" {
+			newRoot = r
+			break
+		}
+	}
+
+	//logf("%s", newRoot.Out[0].Caller.Out)
+	//logf("%s", newRoot.Out[0].Callee.Out)
+
+	err := GraphVisitEdgesDFS(maxDepth, newRoot, func(edge *callgraph.Edge) error {
 		count++
 
 		caller := edge.Caller
@@ -384,4 +396,36 @@ func printOutput(prog *ssa.Program, mainPkg *types.Package, cg *callgraph.Graph,
 	}
 
 	return buf.Bytes(), nil
+}
+
+func GraphVisitEdgesDFS(maxDepth int, n *callgraph.Node, edge func(*callgraph.Edge) error) error {
+	seen := make(map[*callgraph.Node]bool)
+	var visit func(d int, n *callgraph.Node) error
+	visit = func(d int, n *callgraph.Node) error {
+		if maxDepth > 0 && d > maxDepth {
+			return nil
+		}
+		if !seen[n] {
+			seen[n] = true
+			d += 1
+			for _, e := range n.Out {
+				if err := visit(d, e.Callee); err != nil {
+					return err
+				}
+				if err := edge(e); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+	for _, e := range n.Out {
+		if err := visit(0, e.Callee); err != nil {
+			return err
+		}
+		if err := edge(e); err != nil {
+			return err
+		}
+	}
+	return nil
 }

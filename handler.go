@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -20,7 +21,8 @@ func analysisSetup() (r renderOpts) {
 		include:  []string{*includeFlag},
 		limit:    []string{*limitFlag},
 		nointer:  *nointerFlag,
-		nostd:    *nostdFlag}
+		nostd:    *nostdFlag,
+		maxDepth: *maxDepth}
 
 	return r
 }
@@ -155,6 +157,11 @@ func buildOptionsFromRequest(r *http.Request) *renderOpts {
 	}
 	if inc := r.FormValue("include"); inc != "" {
 		opts.include[0] = inc
+	}
+	if md := r.FormValue("maxDepth"); md != "" {
+		if maxDepth, err := strconv.Atoi(md); err == nil {
+			opts.maxDepth = maxDepth
+		}
 	}
 
 	return &opts
