@@ -22,7 +22,8 @@ func analysisSetup() (r renderOpts) {
 		limit:    []string{*limitFlag},
 		nointer:  *nointerFlag,
 		nostd:    *nostdFlag,
-		maxDepth: *maxDepth}
+		maxDepth: *maxDepth,
+		rootFunc: *rootFuncFlag}
 
 	return r
 }
@@ -162,6 +163,9 @@ func buildOptionsFromRequest(r *http.Request) *renderOpts {
 		if maxDepth, err := strconv.Atoi(md); err == nil {
 			opts.maxDepth = maxDepth
 		}
+	}
+	if r := r.FormValue("rootFunc"); r != "" {
+		opts.rootFunc = r
 	}
 
 	return &opts
